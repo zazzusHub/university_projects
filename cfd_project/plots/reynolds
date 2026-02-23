@@ -1,0 +1,447 @@
+########################################################################
+########################################################################
+################### riportare parametri utilizzati #####################
+##### turbulent region, mesh: base size=0.002 m; thickness=15 mm; total prism 10
+
+import numpy as np 
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+import matplotlib.cm as cm
+
+def reynolds(ro,mi,v,Dh):
+    
+    Re=(ro*v*Dh)/mi
+    return Re
+
+def velocity(ro,mi,Re,Dh):
+
+    v=mi*Re/(ro*Dh)
+    return v
+
+def p_drop(f,ro,Dh,v,L):
+
+    DeltaP=(f*L*ro*v**2)/(2*Dh)
+    return DeltaP
+
+def friction_factors(ro,Dh,L,v,delta_p):
+
+    f = delta_p*2*Dh/(L*ro*v**2)
+    return f
+
+def laminar(ro,Dh,L,mi):
+    
+    Re=np.array([1000,1500,2000])
+    p_1,p_2 =  np.loadtxt("/home/f_z/code_project/Starccm/data_lam.txt", unpack=True)
+    delta_p_CFD=p_1-p_2
+
+    v=velocity(ro,mi,Re,Dh)
+    f=friction_factors(ro,Dh,L,v,delta_p_CFD)
+    f_f=64/Re
+    return f,f_f,Re
+
+import numpy as np
+
+def get_theoretical_correlations(num_points=1000):
+    """
+    Returns theoretical correlations.
+    For roughness keys ('Swamee', 'Churchill'), it returns a list of tuples:
+    [(Re, f, roughness_value), (Re, f, roughness_value), ...]
+    """
+    
+    # --- 1. Standard Smooth Correlations ---
+    # Poiseuille (Laminar, Re < 2000)
+    re_poiseuille = np.logspace(np.log10(1000), np.log10(2000), num_points)
+    f_poiseuille = 64 / re_poiseuille
+    
+    # Blasius (Turbulent Smooth, 3k < Re < 30k)
+    re_blasius = np.logspace(np.log10(3000), np.log10(30000), num_points)
+    f_blasius = 0.316 * re_blasius**(-0.25)
+    
+    # McAdams (Turbulent Smooth, 30k < Re < 1e6)
+    re_mcadams = np.logspace(np.log10(30000), np.log10(1e6), num_points)
+    f_mcadams = 0.184 * re_mcadams**(-0.2)
+
+    # --- 2. Roughness Correlations (Multiple epsilon values) ---
+    rel_roughness = np.array([1e-4, 1e-3, 2e-3, 5e-3, 1e-2])
+    
+    # Define Re ranges for these specific equations
+    Re_churchill_range = np.logspace(np.log10(4000), np.log10(5000), num_points) # Unified range usually better
+    Re_swamee_range = np.logspace(np.log10(5000), np.log10(1e7), num_points)
+
+    # Lists to store the family of curves
+    swamee_curves = []
+    churchill_curves = []
+    
+    for eps in rel_roughness:
+        # --- Swamee-Jain (Explicit) ---    
+        # f = 0.25 / [log10( e/3.7D + 5.74/Re^0.9 )]^2
+        term_swamee = (eps / 3.7) + (5.74 / (Re_swamee_range**0.9))
+        f_sw = 0.25 * (np.log10(term_swamee))**(-2)
+        f_asymp=0.25 * (np.log10((eps / 3.7) + (5.74 / (1e7**0.9))))**(-2)
+        print("Fasymptotic",f_asymp)
+        swamee_curves.append((Re_swamee_range, f_sw, eps,f_asymp))
+        
+        # --- Churchill (Full range equation) ---
+        # We use Re_churchill_range (vectorized) instead of Re[j]
+        # A = (-2.457 * ln( (7/Re)^0.9 + 0.27*eps ))^16
+        arg_A = (7 / Re_churchill_range)**0.9 + 0.27 * eps
+        A = (2.457 * np.log(1/arg_A))**16 # Note: log(1/x) = -log(x), checked formula sign
+        
+        B = (37530 / Re_churchill_range)**16
+        
+        # We assume the laminar term (8/Re)^12 is negligible for this Re range, 
+        # but here is the full formula part for the turbulent side:
+        term2 = 1 / ((A + B)**1.5)
+        
+        # If we are only plotting turbulent/transition, we focus on the main term:
+        # standard Churchill full eq: f = 8 * ( (8/Re)^12 + 1/(A+B)^1.5 )^(1/12)
+        term1 = (8 / Re_churchill_range)**12
+        f_asymp=1
+        f_ch = 8 * ((term1 + term2)**(1/12))
+        
+        churchill_curves.append((Re_churchill_range, f_ch, eps,f_asymp))
+
+    return {
+        "Poiseuille": (re_poiseuille, f_poiseuille),
+        "Blasius": (re_blasius, f_blasius),
+        "McAdams": (re_mcadams, f_mcadams),
+        "Swamee": swamee_curves,      # Returns LIST of curves
+        "Churchill": churchill_curves # Returns LIST of curves
+    }
+
+Dh=2*0.01875#2*0.0375 #m
+ro=997.561 #kg*m^-3
+mi= 8.8871E-4 #Pa-s
+Re=np.array([4e+3,1.6e+4,2e+4,4.5e+4,6.3e+4,2.5e+5,1e+6])
+L=0.2 #m qdelta_L
+rel_roughness=np.array([1e-4,1e-3,2e-3,5e-3,1e-2])
+
+p_1,p_2 =  np.loadtxt("/home/f_z/code_project/Starccm/data.txt", unpack=True) #data.txt has the data from the first mesh
+
+v=velocity(ro,mi,Re,Dh)
+delta_p_sccm= p_1 - p_2 
+
+####Calcolo relativo liscio
+f=np.array([0.316/(Re[0]**0.25),0.316/(Re[1]**0.25),0.316/(Re[2]**0.25),
+            0.184/(Re[3]**0.2),0.184/(Re[4]**0.2),0.184/(Re[5]**0.2),0.184/(Re[6]**0.2)]) #liscio
+
+f_f_l=friction_factors(ro,Dh,L,v,delta_p_sccm[:7]) 
+np.set_printoptions(formatter={'float': '{: 0.2e}'.format})
+
+
+#print(f"f{f}")
+#print(f"reynolds{Re}")
+fig, ax1 = plt.subplots(figsize=(8,6))
+#ax1.errorbar(Re, f_f_l, color='black', marker="P", linestyle=" ", label="Smooth")#np.abs(f-f_f),
+
+# Plot keff values
+ax1.set_xlabel("Reynolds",fontsize=14)
+ax1.set_ylabel("f",fontsize=14)
+ax1.tick_params(axis="y", labelcolor="blue")
+ax1.set_xscale("log")
+ax1.set_yscale("log")
+
+####laminar part
+
+f_laminar,f_f_laminar,Re_laminar=laminar(ro,Dh,L,mi)
+#ax1.plot(Re_laminar, f_laminar[:7] , marker= "s",color="red", linestyle= " ", label="Laminar")
+plt.grid()
+
+
+###color_map
+norm = mcolors.LogNorm(vmin=1e-4, vmax=1e-2)
+cmap = plt.get_cmap('viridis')
+for i in rel_roughness:
+    line_color = cmap(norm(i)) #rgba values
+    #print(i)
+    if i==1e-4: 
+        epsilon1=line_color
+    elif i==1e-3:
+        epsilon2=line_color
+    elif i==2e-3:
+        epsilon3=line_color
+    elif i==5e-3:
+        epsilon4=line_color
+    elif i==1e-2:
+        epsilon5=line_color
+
+#print("line color",epsilon1,epsilon2,epsilon3)
+sm = cm.ScalarMappable(cmap=cmap, norm=norm)
+sm.set_array([]) 
+#cbar = plt.colorbar(sm, ax=ax1)
+#cbar.set_label('Relative Roughness ($\epsilon/D$)')
+
+# Plot relative error on second y-axis
+
+### Computing the rough pipe
+
+f_rough=np.zeros((5,7)) #theoretical friction factor
+
+v_m=np.array([0.095,0.38,0.475,1.069,1.5,5.94,23.76,
+            0.095,0.38,0.475,1.069,1.5,5.94,23.76,
+            0.095,0.38,0.475,1.069,1.5,5.94,23.76,
+            0.095,0.38,0.475,1.069,1.5,5.94,23.76,
+            0.095,0.38,0.475,1.069,1.5,5.94,23.76])
+
+for i in range(len(rel_roughness)):
+      for j in range(len(Re)):
+        #f_rough[i,j]=(-1.8*(np.log10(((rel_roughness[i])/(3.7))**(1.11)+ 6.9/Re[j])))**(-2) Haaland
+        if j>0:
+            f_rough[i,j]=0.25*(np.log10(((rel_roughness[i])/(3.7))+ 5.74/(Re[j]**0.9)))**(-2) #Jain Swanee >5000
+        else:
+        #Churcil per ogni Re:
+            argomento_log = 1 / ( (7/Re[j])**0.9 + 0.27 * rel_roughness[i] )
+            A = (2.457 * np.log(argomento_log))**16
+            B = (37530 / Re[j])**16
+
+            term1 = (8 / Re[j])**12
+            term2 = 1 / (A + B)**1.5
+
+            f_rough[i,j] = 8 * (term1 + term2)**(1/12)
+
+
+f_f=friction_factors(ro,Dh,L,v_m,delta_p_sccm[7:]) #sccm friction factor
+np.set_printoptions(formatter={'float': '{: 0.2e}'.format})
+
+
+#print(f"reynolds{Re}")
+#print("diff",np.abs(f_f[7:14]-f_rough[1,:])/f_rough[1,:])
+###plotting differences 
+
+ax1.plot(Re, f_f[:7] , marker= "s",linestyle=" ",color=epsilon1, label="$\epsilon /D=0.0001$")
+ax1.plot(Re,f_f[7:14] ,   marker= "o",linestyle=" ",color=epsilon2, label="$\epsilon /D=0.001$")
+ax1.plot(Re,f_f[14:21] ,   marker= "^",linestyle=" ",color=epsilon3, label="$\epsilon /D=0.002$")
+ax1.plot(Re, f_f[21:28] ,  marker= "X",linestyle=" ",color=epsilon4, label="$\epsilon /D=0.005$")
+ax1.plot(Re, f_f[28:] ,    marker= "D",linestyle=" ",color=epsilon5, label="$\epsilon /D=0.01$")
+ax1.legend(fontsize='10', loc='best')
+
+# Get data only if oyu want to add also the relationships
+correlations = get_theoretical_correlations()
+
+
+# Define colors for roughness to make them pretty
+
+colors = ([epsilon1,epsilon2,epsilon3,epsilon4,epsilon5])#plt.cm.viridis(np.linspace(0, 1, 5)) 
+counter=1
+for name, data in correlations.items():
+    
+    # CASE 1: Skip the smooth/laminar ones if you don't want them
+    if name in ["Poiseuille"]:
+        #re_vals, f_vals = data
+        #ax1.plot(re_vals, f_vals, color='black', linestyle='--', label="Relationships") 
+        continue
+
+    if name in [ "Blasius", "McAdams"]:
+        #re_vals, f_vals = data
+        #ax1.plot(re_vals, f_vals, color='black', linestyle='--') #continue
+        continue
+
+    # CASE 2: Plot the Roughness families
+    if name in ["Swamee", "Churchill"]:
+        # "data" is now the list of tuples we created: [(Re, f, eps), ...]
+        for i, (re_vals, f_vals, eps,f_asymp) in enumerate(data):
+            
+            # Determine line style: Solid for Swamee, Dashed for Churchill (example)
+            linestyle = '--' 
+            
+            
+            # Label only the first curve to avoid cluttering legend
+            if counter==1: 
+                label = "Relationships"
+                counter=0
+            else:
+                label="_nolegend_"
+            
+            ax1.plot(re_vals, f_vals, 
+                     color=colors[i], 
+                     linestyle=linestyle,
+                     label=label,   
+                     linewidth=1.5)
+            
+            # Optional: Add text annotation for roughness value at the end of the line
+            if name == "Swamee":
+                a=f"$f= {f_asymp:.2e}$"
+            else: 
+                a=" "
+
+            target_Re = 5e6  # Esempio: mette il testo a Re = 400,000
+                
+            # 2. Trova l'indice nell'array 're_vals' più vicino a quel valore
+            # (np.abs calcola la distanza, argmin trova l'indice della distanza minima)
+            idx_txt = (np.abs(re_vals - target_Re)).argmin()
+            
+            # 3. Estrai le coordinate esatte su QUELLA curva
+            x_pos = re_vals[idx_txt]
+            y_pos = f_vals[idx_txt]
+            ax1.text(x_pos, y_pos, a, fontsize=11)
+ax1.legend()
+#print(f_f)
+##Add the laminar part
+
+fig1, ax = plt.subplots(figsize=(8,6))
+plt.grid()
+bar_width = 0.15
+f_rough_flat = f_rough.flatten() #flatting the 2darray array
+diff_values = np.abs(f_f - f_rough_flat)/f_rough_flat
+indices = np.arange(7) #len(Re)
+
+for i in range(5):
+    start = i * 7
+    end = (i + 1) * 7   
+    
+    current_errors = diff_values[start:end]
+    
+    r_val = rel_roughness[i]
+    color = 'black' if r_val <= 0 else cmap(norm(r_val))
+    
+    offset = (i - 5 // 2) * bar_width
+    x_positions = indices + offset
+
+    ax.bar(x_positions, current_errors, 
+           width=bar_width, 
+           color=color, 
+           edgecolor='black', 
+           linewidth=0.5,
+           label=f'$\epsilon/D={r_val:.1e}$') 
+    
+ax.set_xlabel('Reynolds Re', fontsize=12, fontweight='bold')
+ax.set_ylabel(' $|f_{CFD} - f_{Rel}|/f_{Rel}$', fontsize=12, fontweight='bold')
+
+unique_reynolds = Re[:7] 
+ax.set_xticks(indices)
+ax.set_xticklabels([f'{val:.1e}' for val in unique_reynolds])
+ax.legend(title="Relative Roughness", title_fontsize='11', 
+          fontsize='10', loc='upper left', bbox_to_anchor=(0.80, 0.90))
+
+'''
+
+#####Add the experimental correlations:
+correlations = get_theoretical_correlations()
+equation_labels = {
+    "Poiseuille" : r"$f = \frac{64}{Re}$",
+    "Blasius": r"$f = 0.316 Re^{-0.25}$",
+    "McAdams": r"$f = 0.184 Re^{-0.2}$"
+}
+added_legend = False
+for name, data in correlations.items():
+    
+    # 1. Saltiamo le correlazioni complesse (liste di curve)
+    if name in ["Swamee", "Churchill"]:
+        continue 
+    
+    # 2. Adesso siamo sicuri che 'data' sia la tupla (Re, f) delle curve liscie
+    re_vals, f_vals = data
+
+    # CASE 2: Plot the Roughness families
+    if name in ["Poiseuille", "Blasius", "McAdams"]:
+         # 1. Plot della linea
+         #label = 'Relationships' if not added_legend else "_nolegend_"
+        if added_legend == False:
+            label="Relationships"
+            added_legend = True
+        else: 
+            label="_nolegend_"
+        ax1.plot(re_vals, f_vals, label=label, color='black', linestyle='--')
+        
+         # 2. Calcolo posizione del testo (punto centrale della curva)
+        mid_index = len(re_vals) // 2
+        x_pos = re_vals[mid_index]
+        y_pos = f_vals[mid_index]
+        # Opzionale: Spostiamo leggermente il testo per non coprire la linea
+        if name == "Poiseuille":
+            ha = 'right' # allineamento orizzontale
+            va = 'bottom' # allineamento verticale
+            offset_x = 0.9  # Fattore correttivo logaritmico
+            offset_y = 1.0
+        else:
+            ha = 'right'
+            va = 'bottom'
+            offset_x = 0.9
+            offset_y = 0.9 
+        # 3. Aggiunta del testo
+        ax1.text(x_pos * offset_x, y_pos * offset_y, 
+                 equation_labels[name], 
+                 fontsize=12, 
+                 color='black',
+                 horizontalalignment=ha,
+                 verticalalignment=va,
+                 bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', pad=1))
+ax1.legend()
+# --- 1. SETUP DATI (Esempio: sostituisci con i tuoi dati veri) ---
+# Assicurati che tutti questi array abbiano la stessa lunghezza di Re
+# Re = ... (il tuo array di Reynolds)
+Re_cases=np.array([1e+3,1.5e+3,2e+3,4e+3,1.6e+4,2e+4,4.5e+4,6.3e+4,2.5e+5,1e+6])
+indices = np.arange(len(Re_cases))
+
+# Calcolo degli errori relativi per i due casi separatamente
+# Caso Laminare
+err_laminar = np.abs(f_f_laminar - f_laminar) / f_laminar
+# Caso Smooth (Turbolento)
+err_smooth = np.abs(f_f_l - f) / f
+
+# --- 2. PLOTTING ---
+fig, ax = plt.subplots(figsize=(8,6))
+
+# Larghezza delle barre
+bar_width = 0.35  # Un po' più larghe per vederle meglio
+
+# Posizionamento barre: 
+# Laminare spostato a sinistra (-width/2)
+# Smooth spostato a destra (+width/2)
+rects1 = ax.bar(indices[:3]- bar_width/2, err_laminar, 
+                width=bar_width, 
+                color='red',          # ROSSO per Laminare
+                edgecolor='black', 
+                linewidth=0.5,
+                label='Laminar')
+
+rects2 = ax.bar(indices[3:]+ bar_width/2, err_smooth, 
+                width=bar_width, 
+                color='black',        # NERO per Smooth
+                edgecolor='black', 
+                linewidth=0.5,
+                label='Smooth')
+
+# --- 3. FORMATTAZIONE ---
+ax.set_xlabel('Reynolds Re', fontsize=12, fontweight='bold')
+ax.set_ylabel(r'$|f_{CFD} - f_{Rel}|/f_{Rel}$', fontsize=12, fontweight='bold') # LaTeX formatting pulito
+
+# Impostazione etichette asse X
+ax.set_xticks(indices)
+ax.set_xticklabels([f'{val:.1e}' for val in Re_cases], rotation=45) # Rotation opzionale se si sovrappongono
+
+
+# Griglia e Legenda
+ax.grid(axis='y', alpha=0.7) # Griglia solo orizzontale è più elegante per bar chart
+ax.legend(fontsize='10', loc='best')
+
+plt.tight_layout()
+'''
+
+plt.show()
+Rex=np.array([1000,2000, 3000])
+#print("v", velocity(ro, mi, Rex ,Dh))
+'''
+
+for i in range(len(dp_eval)):
+    print(f"{dp_eval[i]:8.2f} | {dp_star[i]:8.2f} | {differenza[i]:8.2f} | {errore_relativo[i]:8.4f}")
+###### y+ evaluation
+ni=mi/ro#kinematic viscosity 
+f= 0.079 * Re**(-0.25)
+tau=0.055#=0.5*ro*f*v**2
+ustar=(tau/ro)**0.5
+delta=5*ni/ustar #sublayer thickenss
+ustar= 5*ni/delta
+yplus=30 #m
+y=yplus*ni/ustar #ydistance from the wall , in this case the centroid of the oitermost cell==> if i need to search for y+=30 then just invert it!
+
+S=5 #mm total thickness
+r=1.2 #stretching ratio
+n=5
+
+
+y1=S*(r-1)/(r**n-1)
+print(y,y1)
+
+'''
+
