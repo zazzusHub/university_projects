@@ -1,0 +1,566 @@
+\documentclass[serif]{beamer}
+\usepackage[T1]{fontenc}
+\usepackage[sfdefault]{FiraSans}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[separate-uncertainty=true]{siunitx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{mathrsfs}
+\usepackage{mathtools}
+\usepackage{commath}
+\usepackage{braket}
+\usepackage{graphicx}
+\usepackage[euler-digits]{eulervm}
+\usepackage{pifont} 
+\usepackage{comment}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usepackage[backend=biber]{biblatex} % o style=authoryear
+\addbibresource{biblio.bib}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc}
+
+
+% Configurazione Tema
+\usetheme{Madrid}
+\useoutertheme[subsection=false]{miniframes}
+
+% --- DEFINIZIONE COLORI STAR-CCM+ AGGIORNATI ---
+\definecolor{StarCCMBlue}{RGB}{0, 60, 75}      % Blu scuro istituzionale
+\definecolor{StarCCMCyan}{RGB}{0, 176, 202}     % Ciano acceso
+\definecolor{StarCCMGray}{RGB}{200, 210, 215}   % Grigio più scuro per titoli/contrasto
+
+% --- LOGICA LOGO (Nascondi in TitlePage) ---
+\logo{%
+    \ifnum\insertframenumber>1
+        \includegraphics[height=1 cm]{sccm.png}%
+    \fi
+}
+
+% --- APPLICAZIONE COLORI ---
+
+% 1. Titoli delle slide (Nero su Grigio StarCCM)
+\setbeamercolor{frametitle}{fg=white, bg=StarCCMBlue}
+
+% 2. Fascia superiore (Sezioni/Miniframes)
+\setbeamercolor{section in head/foot}{fg=black, bg=StarCCMGray}
+
+% 3. Fascia inferiore (Footer in ordine cromatico)
+\setbeamercolor{author in head/foot}{bg=StarCCMBlue, fg=white}   % Parte sinistra (Autore)
+\setbeamercolor{title in head/foot}{bg=StarCCMCyan, fg=white}    % Parte centrale (Titolo)
+\setbeamercolor{date in head/foot}{bg=StarCCMGray, fg=black}    % Parte destra (Data)
+
+% 4. Struttura generale
+\setbeamercolor{structure}{fg=StarCCMCyan}
+\setbeamercolor{title}{fg=white, bg=StarCCMBlue}
+\setbeamertemplate{frametitle}[default][center]
+
+% --- INFORMAZIONI PRESENTAZIONE ---
+\title[Moody's Diagram]{Distributed Pressure Drops: an Axisymmetric Approach}
+
+\titlegraphic{
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+            \centering
+            \includegraphics[scale=0.17]{cherub.png}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \centering
+            \includegraphics[scale=0.08]{sccm.png}
+        \end{column} 
+    \end{columns}
+}
+
+\author[F. Zazzu]{Francesco Zazzu}
+\date[2 february 2026]{A.Y. 2024/2025}
+\institute[]{MSc in Nuclear Engineering \\ Università di Pisa}
+
+\begin{document}
+
+% Prima slide (senza logo)
+\begin{frame}
+    \titlepage
+\end{frame}
+
+\section{Introduction}
+ 
+\begin{frame}{Introduction}
+    \textbf{Distributed Pressure Drops} are estimated using \textbf{Experimental Relationships} to 
+    define \textbf{Friction Factors} dependent on flow, fluid parameters and the specific application.  
+    
+    The aims of this work are:
+    \begin{itemize}
+        \item [\ding{227}] Evaluate through a \textbf{CFD code} the friction factors in a pipe of circular cross section. 
+        \item [\ding{227}] Identify the factors affecting the CFD simulation result. 
+        \item [\ding{227}] Compare the results with the experimental relationships.
+    \end{itemize} 
+
+   The simulations were performed using StarCCM+.
+\end{frame}
+
+\section{CFD computation: laminar regime and smooth pipe}
+\begin{frame}[c]
+    \Large
+    \centering
+    \textit{CFD computation: Laminar regime and Turbulent smooth pipe}
+\end{frame}
+
+\begin{frame}{Geometry}
+
+
+    A circular pipe was modeled using a \textbf{2D axisymmetric approach}.
+    
+    Length $L=2.25 m$ and diameter $D=3.75$ cm $\implies L/D=60$. 
+\begin{columns}
+    \vspace{0.3 cm}
+    \begin{column}{0.75\textwidth}
+        \centering
+        \includegraphics[width=\columnwidth]{geometry2.png}
+    \end{column}   
+\end{columns}
+
+\end{frame}
+
+ \begin{frame}{Boundary Conditions}
+    The fluid used is water with constant density $\rho =997.561 \unit{\kilo\gram\per\cubic\metre}$ 
+    and constant dynamic viscosity $\mu =8.8871\times 10^{-4} \unit{\pascal\second}$. 
+    The \textbf{Reynolds} numbers selected for the laminar and turbulent region were: 
+    \footnotesize 
+    \begin{align*}
+        Re_{laminar}   &= (1000, 1500, 2000) \\
+        Re_{turbulent} &= (4000, 16000, 20000, 45000, \\
+                       &\quad 63000, 250000, 1000000)
+    \end{align*}
+    \normalsize
+
+    The \textbf{Inlet Type} was imposed as \textbf{Velocity Inlet}, while the 
+    \textbf{Outlet Type} was set as a \textbf{Pressure Outlet}.
+    
+\end{frame}
+
+\begin{frame}{Mesh}
+
+    The mesh selected for the simulation is an \textbf{Automated Axisymmetric Two-Dimensional} mesh.
+    In particular, a \textbf{Quadrilateral Mesher} is selected for the center of the pipe and a \textbf{Prism Layer 
+    Mesher} for the region near the wall. 
+\begin{columns}
+    \begin{column}{0.4\textwidth}
+        \centering
+        \includegraphics[width=\columnwidth]{mesh.png}
+    \end{column}
+    \begin{column}{0.6\textwidth}
+        Properties:
+        \begin{itemize}
+            \item \textbf{Base size}: $ 2 mm$;
+            \item Prism layer \textbf{Total Thickness}: $15 mm$;
+            \item \textbf{Number of prism layers}: $10$;
+            \item Prism layer  \textbf{Stretching}: $1.2$.
+        \end{itemize}
+    \end{column}
+\end{columns}
+
+\end{frame}
+
+\begin{frame}{On the selection of the Mesh}
+    The chosen properties depend on:
+\begin{itemize}
+            \item \textbf{Reynolds number and velocity inlet}, higher velocities enhance the turbulence;
+            \item \textbf{Wall Y+} values, it is common to have $Y^+=30$ in the center of the first cell on the wall;
+            \item The \textbf{Physics Models} used in the simulation;
+            \item \textbf{Wall roughness}, a thickness of the first prismatic cell comparable with the roughness height of the pipe leads to a 
+                   strong variation in the results.
+        \end{itemize}
+\end{frame}
+
+\begin{frame}{Wall Y+ estimates}
+    \only<1>{
+        At which distance $y$ from the wall does $Y^+=30$ appear?
+        An initial estimate of $y$ comes from the relation: 
+        \begin{equation}
+            f=8\frac{\tau _w}{\rho w^2} \implies y=\frac{Y^+ D}{Re \sqrt{f/8}} 
+        \end{equation}
+        $f$ was evaluated using the known relationships. Meanwhile, the first cell height $h_1$ is calculated as: 
+        \begin{equation}
+            h_1=H_{Tot}\frac{r-1}{r^n-1}
+        \end{equation}
+        Where $r$ is the prism layer stretching, $n$ the number of prism layers and  $H_{tot}$ the total thickness.
+        These two values are then compared. For the chosen properties $h_1=0.58 $mm.
+    }
+   \only<2>{
+    \begin{table}[htbp]
+    \centering
+    \caption{Computed distance at which $Y^+=30$ is expected and effective $Y^+$ value for $h_1 = 0.58 $mm.}
+    %\label{tab:yplus_analysis}
+    %\vspace{0.2cm} % Piccola spaziatura tra caption e tabella
+    
+    \begin{tabular}{
+        S[table-format=7.0] % Colonna 1: Re (fino a 7 cifre intere)
+        S[table-format=3.2] % Colonna 2: Delta y (3 interi, 2 decimali)
+        c                   % Colonna 3: y+ (centrata perché contiene simboli come < o approx)
+    }
+        \toprule
+        {Reynolds} & {$ y (Y^+=30)$ [\unit{mm}]} & {$Y^+$ for $y=h_1/2$} \\
+        \midrule
+        4000    & 4 & $ 2.2$ \\
+        16000   & 1.2  & $ 7.5$ \\
+        20000   & 0.98  & $ 9$ \\
+        45000   & 0.48   & $ 18$ \\
+        63000   & 0.36   & $ 25$ \\
+        250000  & 0.1  & $ 94$ \\
+        1000000 & 0.03   & $ 293$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+   }
+   \only<3>{
+        Which is the most suitable model for the \textbf{wall treatment}?
+
+        Different treatments could be adopted in StarCCM+:
+        \begin{itemize}
+            \item \textbf{High Y+}, assumes $Y^+>30$, permits the use of a coarse mesh, less time consuming;
+            \item \textbf{Low Y+}, assumes $Y^+<5$, a fine layered mesh should be used, computationally demanding;
+            \item \textbf{All Y+}, this treatment could adapt the Wall function to the type of mesh adopted,
+                                    for intermediate meshes and works fine for $5<Y^+<30$;
+            \item \textbf{Two Layer All Y+}, same as All Y+, the turbulent dissipation rate is imposed at the center of the first cell.
+        \end{itemize}
+        The \textbf{Two Layer All Y+} treatment was selected for all simulated cases.
+   }
+\end{frame}
+
+\begin{frame}{The Physics Model}
+\only<1>{
+The \textbf{Two layer All Y+} approach overcomes the $Y^+=30$ problem. The adoption of this treatment imposes the use of Realizable $k-\epsilon$ model.
+    \begin{columns}
+\begin{column}{0.5\textwidth}
+
+    \centering
+    \includegraphics[width=0.75\columnwidth]{laminar_phys.png}
+            
+\end{column}
+\begin{column}{0.5\textwidth}
+    \centering
+    \includegraphics[width=0.65\columnwidth]{turbulent_phys.png}
+\end{column}
+\end{columns}
+}
+\only<2>{
+    Wall $Y^+$ computed with the \textbf{Two Layer All Y+ approach}.
+    \begin{columns}
+    \begin{column}{0.5\textwidth}
+        \centering
+        \includegraphics[width=\columnwidth]{wally_4000.png}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+        \centering
+        \includegraphics[width=\columnwidth]{wallplus_63mil.png}
+    \end{column}
+\end{columns}
+}
+
+\end{frame}
+
+\begin{frame}{Derived parts and $\Delta P$ determination}
+\only<1>{
+    The region of the pipe with a \textbf{fully developed flow} is the one selected for the estimation of the pressure drop $\Delta P$.
+The velocity profile was observed. Was the pipe long enough?
+\begin{columns}
+    
+\begin{column}{0.5\textwidth}
+
+\centering
+\includegraphics[width=\columnwidth]{velocity_63k.png}
+            
+\end{column}
+\begin{column}{0.5\textwidth}
+
+\centering
+\includegraphics[width=\columnwidth]{velocity_63k_long.png}
+            
+\end{column}
+\end{columns}
+}
+\only<2>{
+\begin{columns}
+\begin{column}{0.9\textwidth}
+
+\centering
+\includegraphics[width=\columnwidth]{long.png}
+            
+\end{column}
+\end{columns}
+
+}
+\only<3>{
+    Creating some \textbf{derived parts}, i.e. plane sections, it was possible to run a report and estimate the $\Delta P$.
+    \begin{table}[htbp]
+        \centering
+        % CORREZIONE QUI SOTTO: Aggiunto {cc} per definire 2 colonne centrate
+        \begin{tabular}{cc} 
+            \toprule
+            $\Delta P\quad$ L/D=60 & $\Delta P\quad$ L/D=120 \\
+            \midrule
+            $0.107 \unit{\kilo\pascal}$ & $0.108 \unit{\kilo\pascal}$ \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+    The local pressure has been evaluated at $1.8$ m and $2$ m. 
+    $\Delta L=0.2$ m was used for all cases.
+    
+    \vspace{0.5 cm}
+    
+    \begin{columns}
+        \begin{column}{0.7\textwidth}
+            \centering
+            \includegraphics[width=\columnwidth]{derived_part.png}     
+        \end{column}
+    \end{columns}
+}
+
+
+\end{frame}
+
+\begin{frame}{Friction factors evaluation}
+
+    To compute the friction factors coming from  the simulation,$f_{CFD}$, 
+    the \textbf{Darcy-Weisbach} relation was used: 
+    \begin{equation*}
+        f_{CFD}=2\frac{\Delta P D }{\rho v^2 \Delta L}
+    \end{equation*}
+    while, as a reference, the \textit{Poiseuille, Blasius and McAdams}
+    relationships were adopted. 
+    \begin{align*}
+    f_{\text{Poiseuille}} &= 64/\mathrm{Re}          && \text{Laminar Regime}\\
+    f_{\text{Blasius}}    &= 0.316\mathrm{Re}^{-0.25} && \text{Smooth, } \mathrm{Re} < 30000 \\
+    f_{\text{McAdams}}    &= 0.184\mathrm{Re}^{-0.2}  && \text{Smooth, } 30000 < \mathrm{Re} < 10^6
+\end{align*}
+
+\end{frame}
+
+\begin{frame}{Results}
+
+\only<1>{
+    \vspace{-0.8cm}
+    \begin{columns}
+    \begin{column}{\textwidth}
+        \centering
+        \includegraphics[width=\columnwidth]{laminar_smooth_relationships.png}
+    \end{column}
+\end{columns}
+ }
+ \only<2>{\begin{columns}
+    
+    \begin{column}{\textwidth}
+        \centering
+        \includegraphics[width=0.8\columnwidth]{smooth_laminar_errrel.png}
+    \end{column}
+\end{columns}}
+\only<3>{
+    Some comments on the results:
+    \begin{itemize}
+        \item The discrepancy between the simulation values and the relationship predictions grows as the 
+                Reynolds number approaches the \textbf{Transition Region}.
+        \item For $20000<Re<250000$ the simulations underestimate the friction factors values.
+        \item Note the high relative error for $Re=4000$. 
+    \end{itemize}
+}
+\end{frame}
+
+\section{CFD computation: rough pipe cases}
+\begin{frame}[c]
+    \Large
+    \centering
+    \textit{CFD computation: Turbulent regime Rough pipe}
+\end{frame}
+
+\begin{frame}{Roughness and pre-processing}
+    \textbf{Selected Relative Roughness} values: 
+    \begin{align*}
+    \epsilon /D &= (0.0001, 0.001, 0.002, 0.005, 0.01) \\
+    \epsilon    &= (3.75\times 10^{-6}, 3.75 \times 10^{-5}, 7.5 \times 10^{-5}, \\
+                &\quad 1.875 \times 10^{-4}, 3.75 \times 10^{-4}) \, \text{m}
+\end{align*}
+    It is evident that the last two \textbf{roughness height} values are comparable to $h_1$.
+    How does the simulation behave with the same physics and mesh? 
+\end{frame}
+
+\begin{frame}{Reference Relationships}
+    To evaluate $f_{CFD}$ the Darcy-Weisbach relation is used.
+    For the analytical comparison, the following relationships were adopted:
+
+    % Riduciamo il font e lo spazio verticale
+    \footnotesize 
+    \vspace{0.2cm}
+    
+    % --- BLOCCO 1: CHURCHILL ---
+    \textbf{1. Churchill} ($Re = 4000$):
+    \vspace{-0.5em}
+    \begin{align*}
+        f &= 8 \left[ \left( \frac{8}{Re} \right)^{12} + \frac{1}{(A+B)^{1.5}} \right]^{\frac{1}{12}} \\
+        \text{where:} \quad 
+        A &= \left[ 2.457 \ln \left\{ \frac{1}{(7/Re)^{0.9} + 0.27(\varepsilon/D)} \right\} \right]^{16} \\
+        B &= \left[ \frac{37530}{Re} \right]^{16}
+    \end{align*}
+
+    \vspace{-0.2cm} % Riduciamo spazio tra i due blocchi
+
+    % --- BLOCCO 2: SWAMEE-JAIN ---
+    \textbf{2. Swamee-Jain} ($Re > 4000$):
+    \vspace{-0.5em}
+    \begin{equation*}
+        f = \frac{0.25}{\left[ \log_{10}\left( \frac{1}{3.7(D/\varepsilon)} + \frac{5.74}{Re^{0.9}} \right) \right]^2}
+        \quad 
+        % Condizioni scritte con cases (più pulito)
+        \text{valid for }
+        \begin{cases}
+            5000 < Re < 10^8 \\ 
+            10^{-6} < \varepsilon/D < 10^{-2}
+        \end{cases}
+    \end{equation*}
+
+\end{frame}
+
+\begin{frame}{Results}
+    \only<1>{
+    \begin{columns}
+    
+    \begin{column}{0.95\textwidth}
+        \centering
+        \includegraphics[width=\columnwidth]{turbulent_part_brutto.png}
+    \end{column}
+\end{columns}
+ }
+ \only<2>{\begin{columns}
+    
+    \begin{column}{\textwidth}
+        \centering
+        \includegraphics[width=0.8\columnwidth]{relative_error_mesh1.png}
+    \end{column}
+\end{columns}}
+\only<3>{Some comments on the results:
+\begin{itemize}
+    \item In general, the simulations understimated the friction factors compared to the relationships.
+    \item As anticipated, the \textbf{largest discrepancies} between references and simulations appear for the points with \textbf{highest 
+            relative roughness} values.
+    \item The formation of a dip region for $16000<Re<63000$ is evident. 
+\end{itemize}
+}
+\end{frame}
+
+\begin{frame}{New mesh settings}
+The similar values of roughness height and first cell height suggest that the \textbf{mesh is inadequate} to resolve the turbulence. 
+Reducing the number of prism layers for the two higher roughness cases:
+\begin{columns}
+    \begin{column}{0.4\textwidth}
+        \centering
+        \includegraphics[width=\columnwidth]{mesh2.png}
+    \end{column}
+    \begin{column}{0.6\textwidth}
+        Properties:
+        \begin{itemize}
+            \item \textbf{Base size}: $ 2 mm$;
+            \item \textbf{Prism layer Total Thickness}: $15 mm$;
+            \item \textbf{Number of prism layer}: $5$;
+            \item \textbf{prism layer Stretching}: $1.2$;
+            \item first cell height $h_1\approx 2 $mm.
+        \end{itemize}
+    \end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{New results}
+\only<1>{
+    \begin{columns}
+    \vspace{-0.8 cm}
+    \begin{column}{\textwidth}
+        \centering
+        \includegraphics[width=0.95\columnwidth]{turbulent_part_bello.png}
+    \end{column}
+\end{columns}
+ }
+ \only<2>{\begin{columns}
+    
+    \begin{column}{\textwidth}
+        \centering
+        \includegraphics[width=0.8\columnwidth]{relative_error_rough.png}
+    \end{column}
+\end{columns}}
+\only<3>{Some comments on the results:
+\begin{itemize}
+    \item With the new mesh the discrepancies are reduced.
+    \item Again, the simulations underestimated the friction factor.
+    \item The phenomenon in the region $16000<Re<63000$ still remains. This phenomenon is related to how the code deals with the roughness.
+          In particular, StarCCM+ reproduces a similar trend to Nikuradse's experiment.
+\end{itemize}
+}
+\end{frame}
+
+\begin{frame}{On Nikuradse}
+    
+    \begin{columns}
+    %\vspace{-0.8 cm}
+    \begin{column}{0.6\textwidth}
+        \centering
+        \includegraphics[width=\columnwidth]{nikuradse.png}
+    \end{column}
+    \begin{column}{0.4\textwidth}
+       Nikuradse created artificially roughened pipes to control the geometry of the surface irregularities.
+       He achieved this by gluing uniform sand grains of known sizes onto the inner walls of the pipes. 
+       We can recognise the same behaviour in the graph on the left.  
+    \end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{What about changing the RANS model?}
+\only<1>{
+    Moving from a $k-\epsilon$ to a $k-\omega$ model, an 
+    \textbf{All Y+} model was adopted. The mesh remains the same.
+    %-0.2 cm\vspace{}
+    \begin{columns}
+        \begin{column}{\textwidth}
+        \centering
+        \includegraphics[width=0.72\columnwidth]{omega_vs_epsilon.png}
+    \end{column}
+\end{columns}
+ }
+ \only<2>{\begin{columns}
+    
+    \begin{column}{\textwidth}
+        \centering
+        \includegraphics[width=0.8\columnwidth]{omega_vs_epsilon_err.png}
+    \end{column}
+\end{columns}}
+\end{frame}
+
+\begin{frame}{Total result}
+    \vspace{-0.8cm}
+    \begin{columns}
+    \begin{column}{\textwidth}
+        \centering
+        \includegraphics[width=\columnwidth]{tot_finale.png}
+    \end{column}
+\end{columns}
+\end{frame}
+
+\section{Results \& Discussion}
+\begin{frame}{Conclusion}
+   This work explored the possibility of computing the Friction-Factor through an axisymmetric approach.
+\begin{itemize}
+    \item[\ding{227}] \textbf{One of the factors affecting the results is the mesh choice}:
+                     the choice of the \textbf{Wall Y+ treatment} requires for \textbf{low Reynolds} numbers a \textbf{coarser mesh}; for \textbf{high Reynolds} numbers
+                        the \textbf{turbulent Boundary layer is thinner}, and a \textbf{finer mesh} is required; the \textbf{roughness} value requires a minimum height of the first cell.
+    \item[\ding{227}] StarCCM+ reproduces the \textit{sand-grain} trends of Nikuradse, a different approach respect the relationships taken as references.
+    \item[\ding{227}] Besides all the different aspects that are related to the discrepancies, the \textbf{RANS code and relationships are associated with an intrinsic error}, 
+                        due to the complexity of fluid dynamics problems.  
+    
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Bibliography}
+    \nocite{*} % Cita tutte le voci nel .bib anche se non citate nel testo
+    \printbibliography
+\end{frame}
+
+
+
+\end{document}
