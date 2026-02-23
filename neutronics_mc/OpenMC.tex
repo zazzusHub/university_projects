@@ -1,0 +1,809 @@
+\documentclass[serif]{beamer}
+
+\usepackage[T1]{fontenc}
+\usepackage[sfdefault]{FiraSans}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[separate-uncertainty=true]{siunitx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{mathrsfs}
+\usepackage{mathtools}
+\usepackage{commath}
+\usepackage{braket}
+\usepackage{graphics}
+\usepackage[euler-digits]{eulervm}
+\usepackage{pifont} 
+\usepackage{comment}
+
+\usepackage[backend=biber]{biblatex}
+
+\renewcommand*{\bibfont}{\footnotesize}
+\addbibresource{biblio.bib}
+
+\usepackage{booktabs}
+
+\usetheme{Madrid}
+\usepackage{xcolor}
+\definecolor{OpenMCRed}{RGB}{163,31,52}
+\definecolor{OpenMCGray}{RGB}{140,140,140}
+
+\setbeamercolor{normal text}{fg=black}
+%\setbeamercolor{frametitle}{fg=OpenMCRed}
+\setbeamercolor{title}{fg=black, bg=OpenMCGray}
+%\setbeamercolor{item}{fg=OpenMCDarkGray}
+\setbeamercolor{structure}{fg=OpenMCRed}
+
+\setbeamercolor{frametitle}{fg=black, bg=OpenMCGray}
+
+\setbeamertemplate{frametitle}[default][center]
+\title[ATF's Neutronic]{
+   Accident Tolerant Fuels: Neutronic Aspects
+}
+\titlegraphic{
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+            \centering
+             \includegraphics[scale=0.17]{img/cherub.png}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \centering
+             \includegraphics[scale=0.15]{openmc.png}
+        \end{column} 
+    \end{columns}
+        
+}
+\author[F. Zazzu]{
+    Francesco Zazzu \\
+}
+\date[17 febbraio 2025]{
+    A.Y. 2024/2025
+}
+\institute[]{
+    MSc in Nuclear Engineering \\
+    Dipartimento di Ingegneria Civile e Industriale  \\
+    Università di Pisa
+}
+
+\definecolor{OpenMCRed}{RGB}{163,31,52}
+%\setbeamercolor{titlelike}{bg=unipibl}
+\setbeamerfont{title}{series=\bfseries}
+
+\useoutertheme[subsection=false]{miniframes}
+
+\begin{document}
+
+\frame{\titlepage}
+\logo{
+             \includegraphics[height=0.6cm]{openmc.png}
+        }
+\section{Introduction}
+\begin{frame}{Introduction}
+   
+
+As a result of the Fukushima Daiichi accident, enhancing the safety of fuel and cladding became a topic of serious discussion.
+    
+\begin{itemize}
+    \item[\ding{227}] Why are Accident Tolerant Fuels being developed, and \textbf{how do they compare with conventional fuels}?
+    \item[\ding{227}] What are the \textbf{neutronic characteristics} of ATFs?
+    \item[\ding{227}] How can \textbf{ Monte Carlo simulations} support the development of ATFs?
+\end{itemize}
+
+The aim of this work is to answer these questions through the use of
+\textbf{OpenMC}, a community-developed Monte Carlo neutron and photon \textbf{transport} simulation code.
+\end{frame}
+%\begin{frame}{Accident Tolerant Fuel Objectives and Constrains} The \textbf{primary aim} 
+%    of accident tolerant fuel is to provide, respect the current fuel system design:
+%\begin{itemize}
+%    \item \textbf{lower hydrogen generation rate};
+%    \item \textbf{reduction in the initial and residual stored energy} in the core.
+%\end{itemize}
+%
+%ATFs candidates need to achieve their objectives following some \textbf{constrains}:
+%\begin{itemize}
+%    \item \textbf{Maintaining or improving the fuel performance}, from the neutronic point of view implies flat power distribution, lower peaking factors, comparable feedback coefficient;
+%    \item  \textbf{Backward Compatibility}, compatible with existing LWR designs.
+%\end{itemize}
+%Main character of this presentation: \textbf{FeCrAl} alloys.
+%\end{frame}
+
+\begin{frame}{FeCrAl alloy vs Zircaloy}
+\only<1>{
+Relevant properties and characteristics:
+    \begin{itemize}
+        \item \textbf{compatibility with the coolant chemistry}; 
+        \item \textbf{lower oxidation rate} than Zircaloy;
+        \item  \textbf{hydrogen has a higher mobility} in FeCrAl alloys and will not accumulate in the alloy, \textbf{reducing the embrittlement};
+        \item \textbf{higher specific heat} than Zircaloy that \textbf{decreases the peak cladding temperature}.
+    \end{itemize}
+    Challenges:
+    \begin{itemize}
+        \item \textbf{permeability of tritium}, which poses a \textbf{radiation concern};
+        \item increased \textbf{parasitic neutron absorption} of the FeCrAl.
+    \end{itemize} 
+}
+\only<2>{
+\tiny% Reduce font size for better fit
+\vspace{-27pt}
+\begin{table}
+    \centering
+    \renewcommand{\arraystretch}{1.2}
+    \resizebox{\linewidth}{!}{  % Resize table to fit frame
+    \begin{tabular}{lcc}
+        \toprule
+        \textbf{Property} & \textbf{Zircaloy-4
+        } & \textbf{FeCrAl} \\
+        \midrule
+        Melting Point (°C) & 1850 & 1500 \\
+        Specific Heat  (J/kg·K)  & 285-368 [25°C-700°C]& 480-710 [20°C-600°C]\\
+        Thermal Conductivity (W/m·K) & 14.5-14.2 [25°-425°]& 11-21 [50°C-600°C
+        ]\\
+        Thermal Neutron Absorption Cross Section (barns) & 0.18-0.20 & 1.3-2.0 \\
+        Density (g/cm³) & 6.52 & 7.1 \\
+        \midrule
+        \textbf{Component} & & \\
+        Zr & 98.43\%& - \\
+        Sn & 1.2\% & -\\
+        Fe & 0.21\% & 78.68\%\\
+        Cr &0.12\% & 13.02\%\\
+        Al &-&5.1\%\\
+        Mo &-&2.1\% \\
+        Si &-&2\%\\
+        Nb &-&1\%\\
+        Y &-&0.3\%\\
+        C &-&0.003\%\\
+        \bottomrule
+
+    \end{tabular}
+    }
+    \label{tab:cladding_comparison}
+\end{table}
+}
+ \only<3>{ 
+    \vspace{-22pt}
+    \begin{columns} 
+       \begin{column}{0.85\textwidth}
+            \centering
+            \includegraphics[width=\columnwidth]{img/fecral_abs_cs.png}
+        \end{column}   
+    \end{columns}
+}
+\end{frame}
+
+\begin{frame}{On OpenMC}
+\begin{itemize}
+    \item After initializing the particle and determining its current cell,
+            the \textbf{distance to the nearest boundary} $d_b$ of current cell is determined.
+    \item The \textbf{distance to the next collision} is extrapolated thanks to a \textbf{pseudo-random} number $\xi$, 
+        $d$ is then compared with $d_b$: 
+    \[
+    d=-\frac{\ln \xi}{\Sigma _t} ,~ \xi \in [0,1).
+    \]
+
+    \item To determine the \textbf{probability of interaction} of the particle \textbf{with each nuclide} $i$: 
+    \[P(i) = \frac{\Sigma_{t,i}}{\Sigma_t}.\]
+    
+    \item A \textbf{reaction} for that nuclide is randomly sampled based on the microscopic cross sections: 
+    \[P(x) = \frac{\sigma_x}{\sigma_t}.\]       
+\end{itemize}
+\end{frame}
+
+\section{Initialization} 
+\begin{frame}{Materials and Geometries}
+
+    
+\begin{columns}
+    \begin{column}{0.31\textwidth}
+        \vspace{-5pt}
+        \centering
+        \includegraphics[width=\columnwidth]{img/assembly_ref.png}
+    \end{column}
+    \begin{column}{0.6\textwidth}
+        Some \textbf{approximations}:
+        \begin{itemize}
+            \item simplified geometries;
+            \item only helium is present inside the plenum;
+            \item the fuel pellet stack has been constructed as a single column. 
+            \item burnable poisons are not dispersed in the water. 
+        \end{itemize}
+    \end{column}
+\end{columns}
+
+     
+\end{frame}
+
+\begin{frame}{Materials and Geometries}
+    
+\scriptsize
+\begin{columns}
+\begin{column}{0.26\textwidth}
+    \centering
+    \includegraphics[width=\columnwidth]{img/materials.png}
+            
+\end{column}
+\begin{column}{0.65\textwidth}
+A square cell region is used to surround each pin, with \textbf{transparent boundary conditions}.
+    \centering
+    \includegraphics[width=\columnwidth]{img/single_assembly_geom.png}
+
+\end{column}
+\end{columns}
+
+\end{frame}
+
+\begin{frame}{Cells and Universes}
+    
+
+    \begin{columns}
+\begin{column}{0.6\textwidth}
+
+    \centering
+    \includegraphics[width=\columnwidth]{img/cell_single_assembly.png}
+            
+\end{column}
+\begin{column}{0.4\textwidth}
+    Regions of uniform composition are assigned to  each \textbf{cell}. 
+    These regions can be defined through the use of Boolean operators.
+    The possibility to use \textbf{universes} enables to model any identical repeated structures and then fill them with different elements.
+\end{column}
+\end{columns}
+    
+
+\end{frame}
+
+%\begin{frame}{Cells and Universes}
+%
+%    
+%\begin{columns}
+%\begin{column}{0.6\textwidth}
+%\centering
+%
+%   \includegraphics[width=\columnwidth]{img/guide_tubes.png}
+%
+%\end{column}
+%\begin{column}{0.3\textwidth}
+%\centering
+%
+%\end{column}
+%\end{columns}
+%
+%
+%\end{frame}
+
+\begin{frame}{Fuel Assembly}
+
+    
+Finally, to obtain the Fuel Bundle the \textbf{lattice} has been filled with all the universes defined.
+\vfill
+
+\begin{columns}
+\begin{column}{0.7\textwidth}
+
+
+\centering
+\includegraphics[width=\columnwidth]{img/bundle_universe.png}
+            
+\end{column}
+\end{columns}
+
+
+\end{frame}
+
+\begin{frame}{Plots}
+
+    \vspace{-30pt}
+\begin{center}
+        \includegraphics[angle=-90,width=\linewidth]{img/full_ass.png}
+    \end{center}
+
+    % Bottom row: two side-by-side images
+    \begin{center}
+        \begin{minipage}{0.30\linewidth}
+            \includegraphics[angle=-90,width=\linewidth]{img/assembly_lower.png}
+        \end{minipage}
+        \hfill
+        \begin{minipage}{0.56\linewidth}
+            \includegraphics[angle=-90,width=\linewidth]{img/assembly_upper.png}
+        \end{minipage}
+    \end{center}
+%\end{columns}     
+\end{frame}
+
+\begin{frame}{Plots}
+    
+    \begin{columns}
+    \begin{column}{0.5\textwidth}
+        \centering
+        \includegraphics[width=\columnwidth]{img/assembly_xy.png}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+        \centering
+        \includegraphics[width=0.9\columnwidth]{img/gt.png}
+    \end{column}
+
+\end{columns}
+\end{frame}
+
+
+\begin{frame}{Tallies}
+    Any of the \textbf{tally} $X$ could be defined as:
+    \begin{equation*}
+        X = \underbrace{\int d\mathbf{r} \int d \boldsymbol{\Omega} \int
+    dE}_{\text{filters}} \underbrace{f(\mathbf{r}, \boldsymbol{\Omega},
+    E)}_{\text{scores}} \psi (\mathbf{r}, \boldsymbol{\Omega}, E)
+    \end{equation*}
+
+A \textbf{filter} identify which regions of phase space should score to a given tally as well as the \textbf{scoring function} $f$.
+
+The \textbf{estimator} selected in this case is the \textbf{Track-lenght} estimator. 
+\begin{equation*}
+    V \phi = \frac{1}{W} \sum_{i \in T} w_i \ell_i
+\end{equation*}
+
+\end{frame}
+
+\begin{frame}{Tallies}
+\only<2>{
+\vspace{-15pt}
+\begin{columns}
+    \begin{column}{\textwidth}
+        \centering
+        \includegraphics[width=0.8\columnwidth]{img/tallies.png}
+    \end{column}
+    
+\end{columns}
+}
+\only<1>{
+\textbf{Filters:}
+\begin{itemize}
+    \item \textbf{energy filter}, two energy intervals are used $[0,0.68]eV$ and $[0.68,2\times10^6] eV$
+    \item \textbf{mesh filter}, the number of mesh cells is equal to the number of fuel pins in the assembly.
+                Along the axial direction is used a single bin.
+\end{itemize}
+\textbf{Scores:}
+\begin{itemize}
+    \item \textbf{flux}, rappresents the total flux, measured in \textit{particles-cm per source particles};
+    \item \textbf{kappa-fission}, the recoverable energy production rate due to fission:
+                sum of fission product kinetic energy, kinetic energy of
+                prompt and delayed neutrons, prompt and delayed $\gamma$-rays. Units are $eV$ per source particle.
+    
+\end{itemize}
+}
+
+\end{frame}
+
+\section{Sensitivity Analysis}
+\begin{frame}{Simulation Settings}
+Specify \textbf{execution settings}:
+\begin{itemize}
+    \item \textbf{run mode}, has been choosen the \textbf{eigenvalue} mode. 
+    The transport equation becomes an eigenvalue equation: since then the source will depend on the flux of neutrons itself. 
+    \item \textbf{source distribution};
+    \item \textbf{batches}, rappresents the number of groups in which the source particle histories are broken up. 
+                        By default, a batch will consist of only a single fission generation. \textbf{Inactive},
+                          refers to the number of initial batches during which the code does not score tallies.
+    \item number of \textbf{particles}, will determine the statistical uncertainty. A higher number of particles will reduce the uncertainty.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Sensitivity analysis}
+\begin{columns}
+        \begin{column}{0.5\textwidth}
+        \centering
+          \includegraphics[width=\columnwidth]{img/opt_batches_function.png}   
+        \end{column} 
+        \begin{column}{0.5\textwidth}
+        \vspace{-20pt}
+        \scriptsize
+        \begin{itemize}
+            \item \textbf{N}, number of cycles, $N=5$;
+            \item \textbf{batch range}, interval (min batches, max batches) to test, $(50,100)$;
+            \item \textbf{inactive}, the percentage of inactive batches $(20\%/40\%)$;
+            \item \textbf{source}, a source region equal to the whole fuel bundle, 
+                    selecting only the fissionable material;
+            \item \textbf{particles}, number of particles per batch.
+        \end{itemize}
+        \centering
+        \includegraphics[width=\columnwidth]{img/optimized_batches (2).png}
+    \end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Sensitivity analysis}
+\only<1>{
+    \begin{columns}
+
+    \begin{column}{0.5\textwidth}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\columnwidth]{img/sensitivity_20.png}
+        \caption{ $k_{eff}= 1.4060\pm 0.0004$ that means a relative error $\gamma _k=3.1\times 10^{-4}$}
+    \end{figure}
+    \end{column} 
+    
+    \begin{column}{0.5\textwidth}
+        \begin{figure}
+            \centering
+        \includegraphics[width=\columnwidth]{img/sensitivity_40.png}
+        \caption{ $k_{eff}=1.4052\pm0.0004$ that means a relative error $\gamma _k=2.8 \times 10^{-4}$}    
+        \end{figure}
+        
+    \end{column}
+\end{columns}
+}
+\only<2>{
+    From previous graphs:
+    \begin{itemize}
+        \item The value of $\boldsymbol{\gamma_k}$ decrases as the number of batches increases;
+        \item A higher $\boldsymbol{\gamma_k}$ may indicate an influence from source
+        instabilities. However, the \textbf{relative error} remains more stable with a lower number
+        of inactive batches.
+        \item $10^5$ particles were used because of limited computational capabilities. 
+    \end{itemize} 
+    \begin{columns}
+        
+        \begin{column}{0.5\textwidth}
+            
+            \centering
+            \includegraphics[width=\columnwidth]{img/simulation_set.png}
+            
+        \end{column}
+        
+    \end{columns}
+
+}
+\end{frame}
+
+\section{Running the Simulation}
+\begin{frame}{Fluxes comparison}
+ \begin{columns}
+     
+    \begin{column}{0.62\textwidth}
+        
+        \includegraphics[width=\columnwidth]{img/fluxes_normal_enr.png}
+        
+    \end{column}
+    \begin{column}{0.4\textwidth}
+        Upper map Zircaloy bundle; lower map Fecral bundle. 
+        
+\begin{table}
+    \centering
+    \renewcommand{\arraystretch}{1.2}
+    \resizebox{\linewidth}{!}{  % Resize table to fit frame
+    \begin{tabular}{lcc}
+        \toprule
+        \textbf{Assembly} & \textbf{Thermal flux 
+        } [cm] & \textbf{Fast flux }[cm] \\
+        \midrule
+        
+        Zircaloy & 0.012-0.018 & 0.143-0.147\\
+        FeCrAl &0.011-0.017&0.142-0.146\\
+        \bottomrule
+
+    \end{tabular}
+    }
+\end{table}
+        To better visualize the variation between the two bundles, 
+        the ratio of the fluxes for both energy bins has been plotted.
+    \end{column}
+    
+\end{columns}
+\end{frame}
+
+\begin{frame}{Fluxes comparison}
+   
+    \begin{columns}
+
+        \begin{column}{0.5\textwidth}
+        
+            \centering
+            \includegraphics[width=\columnwidth]{img/normalized_thermal_flux.png}
+        
+        \end{column}
+        \begin{column}{0.5\textwidth}
+        
+            \centering
+            \includegraphics[width=\columnwidth]{img/normalized_fast_flux.png}
+        
+        \end{column}
+    
+    \end{columns}
+\begin{columns}
+    \begin{column}{0.3\textwidth}
+        
+        \begin{table}
+            \centering
+            \renewcommand{\arraystretch}{1.2}
+            \resizebox{\columnwidth}{!}{ 
+                \begin{tabular}{cc}
+                    \toprule
+                    \textbf{Thermal flux 
+                    }  & \textbf{Fast flux } \\
+                    \midrule
+                     0.910-0.946 & 0.987-1.000\\
+                    \bottomrule
+                    
+                \end{tabular}
+                }
+            \end{table}
+    \end{column}
+\end{columns}
+    
+\end{frame}
+
+\begin{frame}{PPF evaluation}
+\only<1>{
+    \begin{columns}
+    
+    \begin{column}{0.6\textwidth}
+        
+            The PPF is defined as:
+            \begin{equation*}
+                PPF=\frac{P_{max}}{P_{avg}}.
+            \end{equation*}
+            Since the power produced per pin is proportional to the flux, 
+            the PPF should be independent of it, implying that FeCrAl and Zircaloy 
+            PPFs should be similar.
+            The tally score used was the \textbf{kappa-fission}. 
+        
+        \end{column}
+           
+    \begin{column}{0.4\textwidth}
+
+            \centering
+            \includegraphics[width=\columnwidth]{img/ppf_eval.png}
+
+    \end{column}
+    \end{columns}
+}
+\only<2>{
+    \vspace{-10pt}
+   
+    \begin{columns}
+
+        \begin{column}{0.5\textwidth}
+        
+                \centering
+            \includegraphics[width=\columnwidth]{img/pdm_zircaloy_normal.png}
+        
+        \end{column}
+        \begin{column}{0.5\textwidth}
+        
+            \centering
+            \includegraphics[width=\columnwidth]{img/pdm_fecral_normal.png}
+        
+        \end{column}
+    
+    \end{columns}
+    \begin{columns}
+        \begin{column}{0.7\textwidth}
+            \begin{table}
+            \centering
+            \renewcommand{\arraystretch}{1.2}
+            \resizebox{0.5\columnwidth}{!}{ 
+                \begin{tabular}{cc}
+                    \toprule
+                    \textbf{Zircaloy range
+                    }  & \textbf{FeCrAl range } \\
+                    \midrule
+                     0.888-1.085 & 0.884-1.090\\
+                    \bottomrule
+                    
+                \end{tabular}
+                }
+            \end{table}
+        \end{column}
+    \end{columns}
+}
+\end{frame}
+
+\begin{frame}{Power distribution comparison}
+    
+    
+\begin{columns}     
+    \begin{column}{0.6\textwidth}
+        
+        \centering
+        \includegraphics[width=\columnwidth]{img/norm_nromal_enr.png}
+    \end{column}
+    \begin{column}{0.4\textwidth}
+        
+        The power distribution of Fecral bundle 
+        has been normalized respect the power distribution of Zircaloy.
+       
+       
+        \textbf{Range}: $0.914-0.954$ 
+
+
+        The values in the power map are similar to the thermal flux map. 
+        There is a slightly mismatch due to the \textbf{kappa-fission} score. 
+    
+    \end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Enhancement of the assembly: strategies}
+\begin{columns}
+    \begin{column}{0.5\textwidth}
+        
+        Another enrichment distribution has been adopted for the fuel assembly, following come constraints:
+        \begin{itemize}
+            \item respect the simmetry of the problem;
+            \item mantain the \textbf{average enrichment} at $5\%$;
+            \item try to \textbf{flatten the flux and reduce PPF};
+        \end{itemize}
+        The attempt with three different enrichments $(6.20\%, 5.45\%, 4.6\%)$ is shown in the figure.
+    \end{column}
+    
+    \begin{column}{0.5\textwidth}
+        \vspace{-5pt}
+        \centering
+        \includegraphics[width=\columnwidth]{img/three_enr.png}
+        
+    \end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Enhancement of the assembly: Fluxes}
+\begin{columns}     
+    \begin{column}{0.6\textwidth}
+        
+        \centering
+        \includegraphics[width=\columnwidth]{img/new_enr.png}
+        
+    \end{column}
+    \begin{column}{0.4\textwidth}
+        Upper map Zircaloy bundle; lower map Fecral bundle. 
+    \begin{table}
+    \centering
+    \renewcommand{\arraystretch}{1.2}
+    \resizebox{\linewidth}{!}{  % Resize table to fit frame
+    \begin{tabular}{lcc}
+        \toprule
+        \textbf{Assembly} & \textbf{Thermal flux 
+        } [cm] & \textbf{Fast flux }[cm] \\
+        \midrule
+        
+        Zircaloy & 0.011-0.019 & 0.143-0.148\\
+        FeCrAl &0.010-0.018&0.142-0.147\\
+        \bottomrule
+
+    \end{tabular}
+    }
+\end{table}
+    \end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Enhancement of the assembly: Fluxes}
+    
+    \begin{columns}
+
+        \begin{column}{0.5\textwidth}
+        
+                \centering
+                \includegraphics[width=\columnwidth]{img/thermal_flux_right_enr.png}
+                
+            \end{column}
+            \begin{column}{0.5\textwidth}
+                
+                \centering
+                \includegraphics[width=\columnwidth]{img/fast_flux_right_enr.png}
+        
+        \end{column}
+    
+    \end{columns}
+    \begin{columns}
+    \begin{column}{0.3\textwidth}
+        
+        \begin{table}
+            \centering
+            \renewcommand{\arraystretch}{1.2}
+            \resizebox{\columnwidth}{!}{ 
+                \begin{tabular}{cc}
+                    \toprule
+                    \textbf{Thermal flux 
+                    }  & \textbf{Fast flux } \\
+                    \midrule
+                     0.907-0.947 & 0.989-1.001\\
+                    \bottomrule
+                    
+                \end{tabular}
+                }
+            \end{table}
+    \end{column}
+\end{columns}
+    
+\end{frame}
+
+\begin{frame}{Enhancement of the assembly: Power map}
+\begin{columns}     
+    \begin{column}{0.5\textwidth}
+        
+        \centering
+        \includegraphics[width=\columnwidth]{img/pdm_zircaloy_right_enr.png}
+        
+    \end{column}
+    \only<1>{\begin{column}{0.5\textwidth}
+        
+        \centering
+        \includegraphics[width=\columnwidth]{img/pdm_fecral_right_enr.png}
+        
+    \end{column}}
+    \only<2>{\begin{column}{0.5\textwidth}
+        \centering
+        \includegraphics[width=\columnwidth]{img/pdm_zircaloy_normal.png}
+        
+    \end{column}}
+\end{columns}
+\only<1>{\begin{columns}
+        \begin{column}{0.7\textwidth}
+            \begin{table}
+            \centering
+            \renewcommand{\arraystretch}{1.2}
+            \resizebox{0.5\columnwidth}{!}{ 
+                \begin{tabular}{cc}
+                    \toprule
+                    \textbf{Zircaloy range
+                    }  & \textbf{FeCrAl range } \\
+                    \midrule
+                     0.925-1.052 & 0.925-1.052\\
+                    \bottomrule
+                    
+                \end{tabular}
+                }
+            \end{table}
+        \end{column}
+    \end{columns}
+}
+\end{frame}
+
+\begin{frame}{Enhancement of the assembly: Normalized map}
+\begin{columns}     
+    \begin{column}{0.7\textwidth}
+        
+        \centering
+        \includegraphics[width=\columnwidth]{img/normalized_pdm.png}
+    \end{column}
+    \begin{column}{0.4\textwidth}
+        \textbf{Range}: $0.916-0.954$
+    \end{column}
+\end{columns}
+\end{frame}
+
+\section{Results \& Discussion}
+\begin{frame}{Further Improvements}
+    \begin{itemize}
+        \item The geometries adopted were strongly simplified, a \textbf{higher degree of 
+                detail} could be achieved;
+        \item a \textbf{higher number of particles} should be implemented in order to reduce
+                fluctuation effects. These effects were mainly visible plotting the flux maps;
+
+        \item increasing the number of particle means also to increase the computational cost. 
+                Then, this solution should be accomplished exploiting the symmetries of the problem.
+    \end{itemize}
+    
+\end{frame}
+\begin{frame}{Conclusion}
+   Primarily, due to its \textbf{absorption microscopic cross section}, FeCrAl exhibits a lower $k_{eff}$ and
+     reduced power production per fuel pin.
+   \begin{itemize} 
+       \item[\ding{227}] However, evaluating the \textbf{PPF for both bundles}, 
+                           a similar behavior has been obtained, implying \textbf{a similar consumption of 
+                           fissile material}. \textbf{This is true also using 
+                           a different enrichment pattern}, but with a uniform consumption of fuel.
+       \item[\ding{227}] To overcome the problem related to the microscopic CS is possible to
+                    \textbf{reduce the thickness of the clad}, respecting the mechanical limit of the material.
+       \item[\ding{227}] Finally, the main objective of ATF should be the capability to withstand against
+                   a accident condition, thanks to some solutions proposed also here, the 
+                   FeCrAl alloys remains promising candidates.
+   \end{itemize}
+\end{frame}
+
+\begin{frame}{Bibliography}
+    \nocite{*}
+    \printbibliography
+\end{frame}
+
+\end{document}
